@@ -3,11 +3,10 @@ pipeline {
     stages {
         stage('Check Push') {
             steps {
-                script {
-                    def branch = sh(script: 'git rev-parse --abbrev-ref HEAD', returnStdout: true).trim()
-                    echo "Pushed to branch: ${branch}"
-                }
+                // Use 'bat' instead of 'sh' for Windows
+                bat 'echo Push event received!'
             }
         }
     }
 }
+
