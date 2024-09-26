@@ -1,106 +1,75 @@
 provider "aws" {
-  region = "us-west-2"
+  region = var.aws_region
 }
 
-# ECS Cluster
-resource "aws_ecs_cluster" "app-cluster" {
-  name = "app-cluster"
-}
-
-# ECS Task Definition
-resource "aws_ecs_task_definition" "app-task" {
-  family                = "app-task"
-  network_mode          = "awsvpc"
-  requires_compatibilities = ["FARGATE"]
-  execution_role_arn    = aws_iam_role.ecs_task_execution_role.arn
-  cpu                   = "256"
-  memory                = "512"
-  container_definitions = <<DEFINITION
-  [
-    {
-      "name": "app-container",
-      "image": "nginx",
-      "essential": true,
-      "portMappings": [
-        {
-          "containerPort": 80,
-          "hostPort": 80
-        }
-      ]
-    }
-  ]
-  DEFINITION
-}
-
-# ECS Service
-resource "aws_ecs_service" "app-service" {
-  name            = "app-service"
-  cluster         = aws_ecs_cluster.app-cluster.id
-  task_definition = aws_ecs_task_definition.app-task.arn
-  desired_count   = 2
-  launch_type     = "FARGATE"
-
-  network_configuration {
-    subnets          = aws_subnet.app-subnet[*].id
-    security_groups  = [aws_security_group.app-sg.id]
-    assign_public_ip = true
-  }
-
-  load_balancer {
-    target_group_arn = aws_lb_target_group.app-tg.arn
-    container_name   = "app-container"
-    container_port   = 80
+# Create a VPC
+resource "aws_vpc" "main_vpc" {
+  cidr_block = var.vpc_cidr
+  tags = {
+    Name = "main-vpc"
   }
 }
 
-# Load Balancer
-resource "aws_lb" "app-lb" {
-  name               = "app-lb"
-  internal           = false
-  load_balancer_type = "application"
-  security_groups    = [aws_security_group.app-sg.id]
-  subnets            = aws_subnet.app-subnet[*].id
+# Create two public subnets in different availability zones
+resource "aws_subnet" "public_subnet_1" {
+  vpc_id     = aws_vpc.main_vpc.id
+  cidr_block = "10.0.1.0/24"
+  availability_zone = "${var.aws_region}a"
 }
 
-# Load Balancer Target Group
-resource "aws_lb_target_group" "app-tg" {
-  name     = "app-tg"
-  port     = 80
-  protocol = "HTTP"
-  vpc_id   = aws_vpc.app-vpc.id
+resource "aws_subnet" "public_subnet_2" {
+  vpc_id     = aws_vpc.main_vpc.id
+  cidr_block = "10.0.2.0/24"
+  availability_zone = "${var.aws_region}b"
 }
 
-# Load Balancer Listener
-resource "aws_lb_listener" "app-listener" {
-  load_balancer_arn = aws_lb.app-lb.arn
-  port              = "80"
-  protocol          = "HTTP"
+# Create an Internet Gateway
+resource "aws_internet_gateway" "main_gw" {
+  vpc_id = aws_vpc.main_vpc.id
+}
 
-  default_action {
-    target_group_arn = aws_lb_target_group.app-tg.arn
-    type             = "forward"
+# Create a route table for public subnets
+resource "aws_route_table" "public_route_table" {
+  vpc_id = aws_vpc.main_vpc.id
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.main_gw.id
   }
 }
 
-# VPC, Subnets, and Security Group
-resource "aws_vpc" "app-vpc" {
-  cidr_block = "10.0.0.0/16"
+resource "aws_route_table_association" "subnet_1_association" {
+  subnet_id      = aws_subnet.public_subnet_1.id
+  route_table_id = aws_route_table.public_route_table.id
 }
 
-resource "aws_subnet" "app-subnet" {
-  count = 2
-  vpc_id = aws_vpc.app-vpc.id
-  cidr_block = "10.0.${count.index}.0/24"
+resource "aws_route_table_association" "subnet_2_association" {
+  subnet_id      = aws_subnet.public_subnet_2.id
+  route_table_id = aws_route_table.public_route_table.id
 }
 
-resource "aws_security_group" "app-sg" {
-  vpc_id = aws_vpc.app-vpc.id
+# Security Group for the EC2 Instances (App and DB)
+resource "aws_security_group" "app_and_db_sg" {
+  vpc_id = aws_vpc.main_vpc.id
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = [var.ingress_cidr]   # Allow SSH access
+  }
 
   ingress {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [var.ingress_cidr]   # Allow HTTP access (for the app)
+  }
+
+  ingress {
+    from_port   = 3306
+    to_port     = 3306
+    protocol    = "tcp"
+    cidr_blocks = [var.ingress_cidr]   # Allow MySQL access (for the database)
   }
 
   egress {
@@ -109,24 +78,65 @@ resource "aws_security_group" "app-sg" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  tags = {
+    Name = "app_and_db_sg"
+  }
 }
 
-# RDS Database
-resource "aws_db_instance" "app-db" {
-  allocated_storage    = 20
-  engine               = "mysql"
-  engine_version       = "5.7"
-  instance_class       = "db.t3.micro"
-  name                 = "appdb"
-  username             = "admin"
-  password             = "password"
-  parameter_group_name = "default.mysql5.7"
-  skip_final_snapshot  = true
-  vpc_security_group_ids = [aws_security_group.app-sg.id]
-  db_subnet_group_name = aws_db_subnet_group.db-subnet-group.name
+# Create EC2 Instance for the App
+resource "aws_instance" "app_server" {
+  ami           = var.ec2_ami_id
+  instance_type = var.ec2_instance_type
+  subnet_id     = aws_subnet.public_subnet_1.id
+  key_name      = var.key_pair_name
+
+  security_groups = [aws_security_group.app_and_db_sg.name]
+
+  user_data = <<-EOF
+              #!/bin/bash
+              sudo yum update -y
+              sudo yum install -y httpd
+              sudo systemctl start httpd
+              sudo systemctl enable httpd
+              echo "Hello, World from the App Server" > /var/www/html/index.html
+              EOF
+
+  tags = {
+    Name = "App Server"
+  }
 }
 
-resource "aws_db_subnet_group" "db-subnet-group" {
-  name       = "db-subnet-group"
-  subnet_ids = aws_subnet.app-subnet[*].id
+# Create EC2 Instance for the MySQL Database
+resource "aws_instance" "db_server" {
+  ami           = var.ec2_ami_id
+  instance_type = var.ec2_instance_type
+  subnet_id     = aws_subnet.public_subnet_2.id
+  key_name      = var.key_pair_name
+
+  security_groups = [aws_security_group.app_and_db_sg.name]
+
+  user_data = <<-EOF
+              #!/bin/bash
+              sudo yum update -y
+              sudo yum install -y mysql-server
+              sudo systemctl start mysqld
+              sudo systemctl enable mysqld
+              mysql -u root -e "CREATE DATABASE finance_app;"
+              mysql -u root -e "CREATE USER 'admin'@'%' IDENTIFIED BY 'password';"
+              mysql -u root -e "GRANT ALL PRIVILEGES ON finance_app.* TO 'admin'@'%';"
+              EOF
+
+  tags = {
+    Name = "DB Server"
+  }
+}
+
+# Associate Elastic IP for App and DB for easier access
+resource "aws_eip" "app_eip" {
+  instance = aws_instance.app_server.id
+}
+
+resource "aws_eip" "db_eip" {
+  instance = aws_instance.db_server.id
 }

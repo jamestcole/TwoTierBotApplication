@@ -1,51 +1,38 @@
 # AWS Region
 variable "aws_region" {
-  description = "The AWS region where resources will be created"
+  description = "The AWS region to deploy resources in"
   type        = string
-  default     = "eu-west-2"
 }
 
-# VPC CIDR Block
+# VPC CIDR
 variable "vpc_cidr" {
   description = "CIDR block for the VPC"
   type        = string
   default     = "10.0.0.0/16"
 }
 
-# Database variables
-variable "db_name" {
-  description = "Name of the RDS database"
+# EC2 Instance Type
+variable "ec2_instance_type" {
+  description = "Instance type for EC2 instances"
   type        = string
-  default     = "appdb"
+  default     = "t2.micro"
 }
 
-variable "db_username" {
-  description = "RDS database username"
-  type        = string
-  default     = "admin"
-}
-
-variable "db_password" {
-  description = "RDS database password"
+# EC2 AMI ID
+variable "ec2_ami_id" {
+  description = "The AMI ID for launching EC2 instances"
   type        = string
 }
 
-# Number of ECS instances (desired count)
-variable "ecs_desired_count" {
-  description = "Desired number of ECS instances"
-  type        = number
-  default     = 2
+# SSH Key Pair
+variable "key_pair_name" {
+  description = "The name of the SSH key pair to access the EC2 instances"
+  type        = string
 }
 
-# Public Subnets for ECS Service
-variable "public_subnets" {
-  description = "List of public subnet IDs"
-  type        = list(string)
-}
-
-# Security Group Ingress CIDR
+# Ingress CIDR (for SSH, HTTP, MySQL access)
 variable "ingress_cidr" {
-  description = "CIDR block allowed for inbound traffic (e.g., 0.0.0.0/0 for all IPs)"
+  description = "CIDR block allowed for inbound traffic (e.g., 0.0.0.0/0 for open access)"
   type        = string
-  default     = "0.0.0.0/0"
 }
+
