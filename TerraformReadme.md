@@ -61,18 +61,22 @@ Deploying the Infrastructure
 Initialize Terraform: This sets up Terraform in your project directory.
 
 bash
-Copy code
+```
 terraform init
+```
 Plan the Infrastructure: This step creates an execution plan, showing you the resources that will be created.
 
 bash
-Copy code
+```
 terraform plan -var-file="terraform.tfvars"
+```
 Apply the Configuration: This step actually creates the AWS resources defined in main.tf.
 
 bash
-Copy code
+
+```
 terraform apply -var-file="terraform.tfvars"
+```
 After applying, Terraform will output the public IP addresses of both EC2 instances (App and Database).
 
 Access the Instances:
@@ -85,8 +89,9 @@ ssh -i your-key.pem ec2-user@<db-server-public-ip>
 Clean Up: When you're done testing, you can destroy the infrastructure:
 
 bash
-Copy code
+```
 terraform destroy -var-file="terraform.tfvars"
+```
 Accessing the App and Database
 App Server: Visit the public IP of your app server in a browser (e.g., http://<app-server-public-ip>) to see the "Hello, World" page.
 Database Server: Connect to the MySQL database via the MySQL client, using the public IP of the database server:

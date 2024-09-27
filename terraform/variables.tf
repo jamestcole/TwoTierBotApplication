@@ -8,14 +8,14 @@ variable "aws_region" {
 variable "vpc_cidr" {
   description = "CIDR block for the VPC"
   type        = string
-  default     = "10.0.0.0/16"
+  default     = "10.0.0.0/16"  # Default VPC CIDR
 }
 
 # EC2 Instance Type
 variable "ec2_instance_type" {
   description = "Instance type for EC2 instances"
   type        = string
-  default     = "t2.micro"
+  default     = "t2.micro"  # Default instance type
 }
 
 # EC2 AMI ID
@@ -35,4 +35,3 @@ variable "ingress_cidr" {
   description = "CIDR block allowed for inbound traffic (e.g., 0.0.0.0/0 for open access)"
   type        = string
 }
-
