@@ -98,5 +98,15 @@ resource "aws_instance" "app_server" {
               #!/bin/bash
               sudo yum update -y
               sudo yum install -y httpd
+              sudo systemctl start httpd
+              sudo systemctl enable httpd
+              echo "Hello, World from the App Server" > /var/www/html/index.html
+              EOF             
              
+}
 
+# Create an instance profile for the EC2 instance
+resource "aws_iam_instance_profile" "ssm_instance_profile" {
+  name = "ssm_instance_profile"
+  role = aws_iam_role.ssm_role.name
+}
