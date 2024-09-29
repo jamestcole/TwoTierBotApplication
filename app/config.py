@@ -1,7 +1,6 @@
 class Config:
-    # Placeholder for configuration settings
-    API_KEY = 'your-ai-api-key'
-    DB_HOST = 'your-db-host'
-    DB_USER = 'your-db-user'
-    DB_PASSWORD = 'your-db-password'
-    DB_NAME = 'finance_qa'
+    API_KEY = 'your-actual-ai-api-key'  # Replace with the actual API key
+    DB_HOST = '10.0.1.146'                # Use the private IPv4 address of the DB server
+    DB_USER = 'admin'                     # As set up in the main.tf script
+    DB_PASSWORD = 'password'              # As set up in the main.tf script
+    DB_NAME = 'finance_app'               # The database you created

@@ -34,18 +34,49 @@
             border: none;
             cursor: pointer;
             border-radius: 5px;
-            text-decoration: none;
+            margin: 10px;
         }
         .button:hover {
             background-color: #0056b3;
+        }
+        #answer {
+            margin-top: 20px;
+            color: #333;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Welcome to the Finance Chatbot</h1>
-        <p>We're working hard to launch the finance chatbot soon. Stay tuned!</p>
-        <a class="button" href="#">Learn More</a>
+        <p>Click on a question to get the answer from the database.</p>
+        <button class="button" onclick="askQuestion('What is a stock?')">What is a stock?</button>
+        <button class="button" onclick="askQuestion('What is a bond?')">What is a bond?</button>
+        <button class="button" onclick="askQuestion('What is an index fund?')">What is an index fund?</button>
+
+        <div id="answer"></div>
     </div>
+
+    <script>
+        function askQuestion(question) {
+            // Get the current host and construct the URL with port 5000
+            const baseUrl = `${window.location.protocol}//${window.location.hostname}:5000/ask`;
+            fetch(baseUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ question: question })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('answer').innerHTML = `<p><strong>Question:</strong> ${data.question}</p>
+                                                               <p><strong>Answer:</strong> ${data.answer}</p>`;
+            })
+            .catch(error => {
+                console.error('Error fetching the answer:', error);
+                document.getElementById('answer').innerHTML = '<p>Error fetching answer. Please try again.</p>';
+            });
+        }
+    </script>
 </body>
 </html>
