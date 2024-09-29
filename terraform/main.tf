@@ -111,7 +111,7 @@ resource "aws_instance" "app_server" {
               #Clone your GitHub repository
               git clone https://github.com/jamestcole/TwoTierBotApplication.git /var/www/html/app
               
-              cp /var/www/app/terraform/apache-config/app.conf /etc/apache2/sites-available/app.conf
+              cp /var/www/html/app/terraform/apache-config/app.conf /etc/apache2/sites-available/app.conf
               # Setup Python virtual environment
               cd /var/www/html/app
               python3 -m venv venv
