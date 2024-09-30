@@ -114,7 +114,7 @@ resource "aws_instance" "app_server" {
               cp /var/www/html/app/terraform/apache-config/app.conf /etc/apache2/sites-available/app.conf
               # Setup Python virtual environment
               cd /var/www/html/app
-              python3 -m venv venv
+              sudo python3 -m venv venv
               sudo chown -R ubuntu:ubuntu /var/www/html/app/venv
               source venv/bin/activate
               pip install -r requirements.txt
