@@ -107,7 +107,7 @@ resource "aws_instance" "app_server" {
   user_data = <<-EOF
               #!/bin/bash
               sudo apt update -y
-              sudo apt install -y apache2 git python3-pip python3-venv mariadb-client
+              sudo apt install -y apache2 git python3-pip python3-venv mariadb-client libapache2-mod-wsgi-py3
               #Clone your GitHub repository
               git clone https://github.com/jamestcole/TwoTierBotApplication.git /var/www/html/app
               
@@ -123,6 +123,8 @@ resource "aws_instance" "app_server" {
               nohup flask run --host=0.0.0.0 --port=5000 &
 
               a2ensite app.conf
+              sudo a2enmod proxy
+              sudo a2enmod proxy_http
               sudo systemctl start apache2
               sudo systemctl enable apache2
 

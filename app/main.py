@@ -1,5 +1,5 @@
 from app import app, db  # Import the initialized Flask app and db connection
-from flask import jsonify, request
+from flask import jsonify, request, send_from_directory
 from flask_cors import CORS
 import requests
 from app.utils.db_connector import get_db_connection
@@ -10,7 +10,8 @@ CORS(app)
 # Simple home route for testing
 @app.route('/')
 def home():
-    return "Hello, World!"
+    return send_from_directory('static', 'index.html')  # Serve index.html from the static fold
+
 
 # Route for handling the question request
 @app.route('/ask', methods=['POST'])
