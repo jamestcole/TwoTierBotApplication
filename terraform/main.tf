@@ -127,6 +127,8 @@ resource "aws_instance" "app_server" {
               sudo a2enmod proxy_http
               sudo systemctl start apache2
               sudo systemctl enable apache2
+              #need to disable the default apache site to prevent conflict and show front end on browser
+              sudo a2dissite 000-default.conf
 
               # Set Flask app to run on startup
               echo "@reboot cd /var/www/html/app && source venv/bin/activate && nohup flask run --host=0.0.0.0 --port=5000 &" | crontab -
@@ -157,10 +159,20 @@ resource "aws_instance" "db_server" {
               #!/bin/bash
               sudo apt update -y
               sudo apt install -y mysql-server git
+
+              # Set MySQL bind-address to allow external connections
+              sudo sed -i "s/^bind-address.*/bind-address = 0.0.0.0/" /etc/mysql/mysql.conf.d/mysqld.cnf
+              sudo sed -i "/^mysqlx-bind-address.*/d" /etc/mysql/mysql.conf.d/mysqld.cnf
+              echo "mysqlx-bind-address = 0.0.0.0" | sudo tee -a /etc/mysql/mysql.conf.d/mysqld.cnf
+              #
+
               sudo systemctl start mysql
               sudo systemctl enable mysql
               # Clone your GitHub repository
               git clone https://github.com/jamestcole/TwoTierBotApplication.git /tmp/repo
+
+
+
               mysql -u root < /tmp/repo/db/setup.sql
               mysql -u root -e "CREATE DATABASE finance_app;"
               mysql -u root -e "CREATE USER 'admin'@'%' IDENTIFIED BY 'password';"

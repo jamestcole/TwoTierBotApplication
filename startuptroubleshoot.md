@@ -1,9 +1,17 @@
 sudo apt install pymysql
 
+in the following directory:
+/var/www/html/app$ 
+cat /home/ubuntu/nohup.out
 
-/var/www/html/app$ cat /home/ubuntu/nohup.out
-
+to solve port 5000 occupied problem :
 sudo lsof -t -i:5000
+then
+sudo kill -9 4926
+
+to solve ports not allowed/ refused issue , on app instance and on database instance
+sudo ufw allow 3306
+sudo ufw allow 5000
 
 
 
